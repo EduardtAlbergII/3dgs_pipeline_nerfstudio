@@ -1,0 +1,88 @@
+#!/bin/bash
+
+start_time=$(date +%s.%N)
+
+echo Splatting Dataset $DATASET
+
+step_times=()
+measure_step() {
+    end_time=$(date +%s.%N)
+    step_duration=$(echo "$end_time - $start_time" | bc)
+    step_times+=("$DATASET: $step_duration seconds")
+    start_time=$end_time
+}
+
+measure_step "Directory creation"
+
+
+
+if [ -f /workspace/data/$DATASET/$DATASET.* ]; then
+    if [ -d /workspace/data/$DATASET/images ]; then
+        echo "images foulder found, skip frame extraction"
+    else
+        echo "Extracting frames from video"
+        mkdir -p /workspace/data/$DATASET/images
+        ffmpeg -i /workspace/data/$DATASET/$DATASET.* -vf "scale='min($RESOLUTION,iw)':'-2',fps=$VIDEO_TO_IMAGE_FPS" -qscale:v 2 -qmin 2 -qmax 2 /workspace/data/$DATASET/images/frame_%04d.jpg
+        python3 /opt/nerf_dataset_preprocessing_helper/01_filter_raw_data.py --input_path /workspace/data/$DATASET/images --output_path /workspace/data/$DATASET/images --target_percentage 95 --groups 1 -y
+        python3 /opt/nerf_dataset_preprocessing_helper/01_filter_raw_data.py --input_path /workspace/data/$DATASET/images --output_path /workspace/data/$DATASET/images --target_count 1200 --scalar 3 -y
+        measure_step "Frame extraction"
+    fi
+fi
+
+if [ -d /workspace/data/$DATASET/colmap ]; then
+    echo "colmap foulder found, skip matcher"
+else
+    echo "colmap feature_extractor"
+    mkdir -p /workspace/data/$DATASET/colmap
+    colmap feature_extractor --image_path /workspace/data/$DATASET/images --database_path /workspace/data/$DATASET/colmap/database.db --SiftExtraction.use_gpu 1
+    measure_step "Feature extraction"
+
+    echo "colmap $MAPPER_TYPE"
+    colmap $MAPPER_TYPE --database_path /workspace/data/$DATASET/colmap/database.db
+    measure_step "matcher"
+    
+    if [ "$SFM" = "colmap" ]; then
+        echo "colmap mapper"
+        colmap mapper --database_path /workspace/data/$DATASET/colmap/database.db --image_path /workspace/data/$DATASET/images --output_path /workspace/data/$DATASET/colmap
+        measure_step "Colmap mapping"
+        python 02_filter_colmap_data.py --transforms_path /workspace/data/$DATASET/colmap --target_count 400
+    fi
+    
+    if [ "$SFM" = "glomap" ]; then
+        echo "glomap mapper"
+        glomap mapper --database_path /workspace/data/$DATASET/colmap/database.db --image_path /workspace/data/$DATASET/images --output_path /workspace/data/$DATASET/colmap
+        measure_step "Glomap mapping"
+    fi
+fi
+
+
+echo "GSplat processing"
+
+if [ -d /workspace/data/$DATASET/ns-process ]; then
+    echo "ns-process foulder found, skip ns-process"
+else
+    echo "ns-process"
+    ns-process-data images --data /workspace/data/$DATASET/images --output-dir /workspace/data/$DATASET/ns-process --skip-colmap --colmap-model-path /workspace/data/$DATASET/colmap/0
+    python3 /opt/nerf_dataset_preprocessing_helper/02_filter_colmap_data.py --transforms_path /workspace/data/$DATASET/ns-process --target_count 200
+fi
+
+if [ -d /workspace/data/$DATASET/ns-train ]; then
+    echo "ns-train foulder found, skip ns-train"
+else
+    echo "ns-train"
+    mkdir -p /workspace/data/$DATASET/ns-train
+    ns-train splatfacto --max-num-iterations $ITERATION_COUNT  --vis viewer+tensorboard --viewer.quit-on-train-completion=True --data /workspace/data/$DATASET/ns-process --output-dir /workspace/data/$DATASET/ns-train
+fi
+
+echo "ns-export"
+ns-export gaussian-splat --load-config /workspace/data/$DATASET/ns-train/ns-process/splatfacto/202*/config.yml --output-dir /workspace/data/$DATASET/
+if [ -d /workspace/data/$DATASET/ns-train ]; then
+    echo "Removing ns-train folder"
+    rm -rf /workspace/data/$DATASET/ns-train
+fi
+
+# mv splat.ply /workspace/data/$DATASET
+measure_step "GSplat processing"
+
+echo "Step execution times:"
+printf '%s\n' "${step_times[@]}"

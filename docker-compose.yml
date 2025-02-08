@@ -1,0 +1,23 @@
+services:
+  gsplat:
+    build:
+      context: .
+      dockerfile: dockerfile
+    env_file:
+      - ./settings.env
+    volumes:
+      - ./data:/workspace/data
+      - ./scripts:/workspace/scripts
+    ports:
+      - 7007:7007 # You can use this port to access the web interface, but sometimes the training process is crashing when you are using the web interface
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [ gpu ]
+
+    # Use the following to run the container in interactive mode
+    # stdin_open: true # docker run -i
+    # tty: true        # docker run -t
+    # entrypoint: "/bin/bash"
+    # command: ""
