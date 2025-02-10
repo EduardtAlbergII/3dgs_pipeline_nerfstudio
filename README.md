@@ -8,7 +8,7 @@ e.g.
 - - truck
 - - - images
 
-You can also provide a video instead of a set of images in the images folder. But in this case you have to remove the images folder, otherwise the image extract process will be skipped.
+You can also provide a video instead of a set of images in the images folder. But in this case you have to remove the images folder, otherwise the image extract process will be skipped. The video filename should be the same as the dataset_name, e.g. truck.mp4 or truck.mov.
 
 You can start the process with the `docker compose up` command. The whole process is:
 

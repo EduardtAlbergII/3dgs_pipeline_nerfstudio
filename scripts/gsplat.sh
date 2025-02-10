@@ -22,7 +22,7 @@ if [ -f /workspace/data/$DATASET/$DATASET.* ]; then
     else
         echo "Extracting frames from video"
         mkdir -p /workspace/data/$DATASET/images
-        ffmpeg -i /workspace/data/$DATASET/$DATASET.* -vf "scale='min($RESOLUTION,iw)':'-2',fps=$VIDEO_TO_IMAGE_FPS" -qscale:v 2 -qmin 2 -qmax 2 /workspace/data/$DATASET/images/frame_%04d.jpg
+        ffmpeg -i /workspace/data/$DATASET/$DATASET.* -vf "scale='if(gt(a,1),$RESOLUTION,-2)':'if(gt(a,1),-2,$RESOLUTION)',fps=$VIDEO_TO_IMAGE_FPS" -qscale:v 2 -qmin 2 -qmax 2 /workspace/data/$DATASET/images/frame_%04d.jpg
         python3 /opt/nerf_dataset_preprocessing_helper/01_filter_raw_data.py --input_path /workspace/data/$DATASET/images --output_path /workspace/data/$DATASET/images --target_percentage 95 --groups 1 -y
         python3 /opt/nerf_dataset_preprocessing_helper/01_filter_raw_data.py --input_path /workspace/data/$DATASET/images --output_path /workspace/data/$DATASET/images --target_count 1200 --scalar 3 -y
         measure_step "Frame extraction"
@@ -45,7 +45,6 @@ else
         echo "colmap mapper"
         colmap mapper --database_path /workspace/data/$DATASET/colmap/database.db --image_path /workspace/data/$DATASET/images --output_path /workspace/data/$DATASET/colmap
         measure_step "Colmap mapping"
-        python 02_filter_colmap_data.py --transforms_path /workspace/data/$DATASET/colmap --target_count 400
     fi
     
     if [ "$SFM" = "glomap" ]; then
@@ -63,7 +62,10 @@ if [ -d /workspace/data/$DATASET/ns-process ]; then
 else
     echo "ns-process"
     ns-process-data images --data /workspace/data/$DATASET/images --output-dir /workspace/data/$DATASET/ns-process --skip-colmap --colmap-model-path /workspace/data/$DATASET/colmap/0
-    python3 /opt/nerf_dataset_preprocessing_helper/02_filter_colmap_data.py --transforms_path /workspace/data/$DATASET/ns-process --target_count 200
+    measure_step "NS Process"
+    python3 /opt/nerf_dataset_preprocessing_helper/02_filter_colmap_data.py --transforms_path /workspace/data/$DATASET/ns-process --target_count 450 -y
+    mv /workspace/data/$DATASET/transforms_filtered.json /workspace/data/$DATASET/ns-process/transforms.json
+    measure_step "Filtering colmap data"
 fi
 
 if [ -d /workspace/data/$DATASET/ns-train ]; then
@@ -72,17 +74,18 @@ else
     echo "ns-train"
     mkdir -p /workspace/data/$DATASET/ns-train
     ns-train splatfacto --max-num-iterations $ITERATION_COUNT  --vis viewer+tensorboard --viewer.quit-on-train-completion=True --data /workspace/data/$DATASET/ns-process --output-dir /workspace/data/$DATASET/ns-train
+    measure_step "Training complete"
 fi
 
 echo "ns-export"
 ns-export gaussian-splat --load-config /workspace/data/$DATASET/ns-train/ns-process/splatfacto/202*/config.yml --output-dir /workspace/data/$DATASET/
+measure_step "Exporting splat"
 if [ -d /workspace/data/$DATASET/ns-train ]; then
     echo "Removing ns-train folder"
     rm -rf /workspace/data/$DATASET/ns-train
+    measure_step "Tidying up temporary files"
 fi
 
-# mv splat.ply /workspace/data/$DATASET
-measure_step "GSplat processing"
 
 echo "Step execution times:"
 printf '%s\n' "${step_times[@]}"
