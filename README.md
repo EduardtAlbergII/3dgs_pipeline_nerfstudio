@@ -1,3 +1,6 @@
+## NeRF Capture Support
+NeRF Capture Support has been discontinued because the results are not good.
+
 # Getting started
 Just adjust the environment variables in the settings.env and put your data in the data folder with the following structure: 
 - data
