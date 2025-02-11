@@ -19,3 +19,8 @@ You can start the process with the `docker compose up` command. The whole proces
 5. Train the Splat
 
 Every Step creates a folder in the dataset folder and if something fails, you can delete the last folder and restart the process and it will continue with the given data. ONLY the ns-train folder will be removed after a successful training.
+
+## Troubeshooting
+
+# /workspace/scripts/gsplat.sh: line 2: $'\r': command not found
+if something like that happens, you have to set the line ending sequence of the gsplat.sh to lf. Git is changing the line endings on windows automatically to crlf, so you have to change it back for the ubuntu docker system.
