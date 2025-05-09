@@ -1,5 +1,5 @@
 {
-    "dockerComposeFile": "../docker-compose.yaml",
-    "service": "Nerfstudio Pipeline",
-    "workspaceFolder": "/workspace"
+    "dockerComposeFile": "../docker-compose.yml",
+    "service": "gsplat",
+    "workspaceFolder": "/opt"
 }

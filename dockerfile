@@ -17,6 +17,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     apt-get update && apt-get install -y \
     git \
     build-essential \
+    dos2unix \
     ffmpeg \
     libboost-program-options-dev \
     libboost-filesystem-dev \
@@ -82,7 +83,7 @@ RUN git clone --recursive https://github.com/colmap/glomap.git /opt/glomap
 
 WORKDIR /opt/glomap
 
-RUN mkdir build && cd build && cmake .. -GNinja && ninja && ninja install
+RUN mkdir build && cd build && cmake .. -GNinja && ninja -j 4 && ninja install
 
 WORKDIR /opt
 
@@ -108,7 +109,7 @@ RUN git clone https://github.com/SharkWipf/nerf_dataset_preprocessing_helper.git
 RUN chown -R 777 /workspace
 
 COPY scripts /workspace/scripts
-
+RUN dos2unix /workspace/scripts/gsplat.sh
 USER user
 ENTRYPOINT [ "/bin/bash" ]
 CMD ["/workspace/scripts/gsplat.sh"]
