@@ -46,4 +46,5 @@ Please check the logs of the gaussian splat pipeline pod, when there is somethin
 There is one structure-from-motion step that is currently not working with the gpu and therefore its very slow. I hope i will find a way to fix this. Feel free to contribute :smile:
 
 # Known Issues
+- I do not recommend to use the viewer while training, because the chance is high that the training will fail.
 - GLOMAP is currently not working
