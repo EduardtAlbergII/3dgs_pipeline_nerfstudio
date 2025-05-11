@@ -63,6 +63,12 @@ RUN wget https://github.com/Kitware/CMake/releases/download/v3.31.2/cmake-3.31.2
     ./cmake-3.31.2-linux-x86_64.sh --skip-license --prefix=/usr && \
     rm cmake-3.31.2-linux-x86_64.sh
 
+# Build and install Ceres Solver with CUDA support
+RUN git clone https://github.com/ceres-solver/ceres-solver.git /opt/ceres-solver --recursive && \
+    cd /opt/ceres-solver && \
+    mkdir build && cd build && \
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DBUILD_EXAMPLES=OFF -DCXX11=ON -DCERES_USE_CUDA=ON -DCUDA=ON && \
+    make -j$(nproc) && make install && ldconfig
 
 # Clone and build COLMAP
 RUN cd /opt && \
@@ -70,16 +76,17 @@ RUN cd /opt && \
     cd colmap && \
     mkdir build && \
     cd build && \
-    cmake .. -DCMAKE_BUILD_TYPE=Release && \
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DCeres_DIR=/usr/local/lib/cmake/Ceres -DBUILD_TESTING=OFF -DBUILD_EXAMPLES=OFF -DCXX11=ON -DCERES_USE_CUDA=ON -DCUDA=ON && \
     make -j$(nproc) && \
     make install
 
 # # Clone the glomap repository
-RUN git clone --recursive https://github.com/colmap/glomap.git /opt/glomap
-
-WORKDIR /opt/glomap
-
-RUN mkdir build && cd build && cmake .. -GNinja && ninja -j$(nproc) && ninja install
+# RUN git clone --recursive https://github.com/colmap/glomap.git /opt/glomap && \
+#     cd /opt/glomap && \
+#     mkdir build && \
+#     cd build && \
+#     cmake .. -GNinja && ninja -j$(nproc) && \
+#     ninja install
 
 WORKDIR /opt
 
@@ -95,6 +102,8 @@ RUN chown -R 777 /workspace
 
 COPY scripts /workspace/scripts
 RUN dos2unix /workspace/scripts/gsplat.sh
+
+
 USER user
 ENTRYPOINT [ "/bin/bash" ]
 CMD ["/workspace/scripts/gsplat.sh"]
