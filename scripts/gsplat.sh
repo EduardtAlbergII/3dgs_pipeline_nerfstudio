@@ -24,7 +24,7 @@ if [ -f /workspace/data/$DATASET/$DATASET.* ]; then
         mkdir -p /workspace/data/$DATASET/images
         ffmpeg -i /workspace/data/$DATASET/$DATASET.* -vf "scale='if(gt(a,1),$RESOLUTION,-2)':'if(gt(a,1),-2,$RESOLUTION)',fps=$VIDEO_TO_IMAGE_FPS" -qscale:v 2 -qmin 2 -qmax 2 /workspace/data/$DATASET/images/frame_%04d.jpg
         python3 /opt/nerf_dataset_preprocessing_helper/01_filter_raw_data.py --input_path /workspace/data/$DATASET/images --output_path /workspace/data/$DATASET/images --target_percentage 95 --groups 1 -y
-        python3 /opt/nerf_dataset_preprocessing_helper/01_filter_raw_data.py --input_path /workspace/data/$DATASET/images --output_path /workspace/data/$DATASET/images --target_count 1200 --scalar 3 -y
+        python3 /opt/nerf_dataset_preprocessing_helper/01_filter_raw_data.py --input_path /workspace/data/$DATASET/images --output_path /workspace/data/$DATASET/images --target_count $MAX_IMAGES_PC --scalar 3 -y
         measure_step "Frame extraction"
     fi
 fi
@@ -63,7 +63,7 @@ else
     echo "ns-process"
     ns-process-data images --data /workspace/data/$DATASET/images --output-dir /workspace/data/$DATASET/ns-process --skip-colmap --colmap-model-path /workspace/data/$DATASET/colmap/0
     measure_step "NS Process"
-    python3 /opt/nerf_dataset_preprocessing_helper/02_filter_colmap_data.py --transforms_path /workspace/data/$DATASET/ns-process --target_count 450 -y
+    python3 /opt/nerf_dataset_preprocessing_helper/02_filter_colmap_data.py --transforms_path /workspace/data/$DATASET/ns-process --target_count $MAX_IMAGES_GS -y
     mv /workspace/data/$DATASET/transforms_filtered.json /workspace/data/$DATASET/ns-process/transforms.json
     measure_step "Filtering colmap data"
 fi

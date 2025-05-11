@@ -63,10 +63,6 @@ RUN wget https://github.com/Kitware/CMake/releases/download/v3.31.2/cmake-3.31.2
     ./cmake-3.31.2-linux-x86_64.sh --skip-license --prefix=/usr && \
     rm cmake-3.31.2-linux-x86_64.sh
 
-# Install libtorch
-RUN wget --no-check-certificate -nv https://download.pytorch.org/libtorch/cu"${CUDA_VERSION%%.*}"$(echo $CUDA_VERSION | cut -d'.' -f2)/libtorch-cxx11-abi-shared-with-deps-${TORCH_VERSION}%2Bcu"${CUDA_VERSION%%.*}"$(echo $CUDA_VERSION | cut -d'.' -f2).zip -O libtorch.zip && \
-    unzip -q libtorch.zip -d . && \
-    rm ./libtorch.zip
 
 # Clone and build COLMAP
 RUN cd /opt && \
@@ -75,7 +71,7 @@ RUN cd /opt && \
     mkdir build && \
     cd build && \
     cmake .. -DCMAKE_BUILD_TYPE=Release && \
-    make -j4 && \
+    make -j$(nproc) && \
     make install
 
 # # Clone the glomap repository
@@ -83,20 +79,9 @@ RUN git clone --recursive https://github.com/colmap/glomap.git /opt/glomap
 
 WORKDIR /opt/glomap
 
-RUN mkdir build && cd build && cmake .. -GNinja && ninja -j 4 && ninja install
+RUN mkdir build && cd build && cmake .. -GNinja && ninja -j$(nproc) && ninja install
 
 WORKDIR /opt
-
-################# SPLATFACTO-W ########################
-
-RUN git clone https://github.com/KevinXu02/splatfacto-w.git --recursive
-RUN chown -R user /opt/splatfacto-w
-RUN chown -R user /workspace
-RUN chmod -R 777 /workspace
-USER user
-RUN cd splatfacto-w/ && pip install -e .
-USER root 
-################# SPLATFACTO-W ########################
 
 RUN git clone https://github.com/SharkWipf/nerf_dataset_preprocessing_helper.git
 

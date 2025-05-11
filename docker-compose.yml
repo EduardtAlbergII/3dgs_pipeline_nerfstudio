@@ -7,7 +7,7 @@ services:
       - ./settings.env
     volumes:
       - ./data:/workspace/data
-      - ./scripts:/workspace/scripts
+      # - ./scripts:/workspace/scripts
     ports:
       - 7007:7007 # You can use this port to access the web interface, but sometimes the training process is crashing when you are using the web interface
     deploy:
