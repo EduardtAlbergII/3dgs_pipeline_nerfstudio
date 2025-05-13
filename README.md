@@ -25,7 +25,7 @@ Every Step creates a folder in the dataset folder and if something fails, you ca
 To start this pipeline in runpod you have to create a storge at first:
 ![](./readme_resources/01_storage.jpg)
 
-After that you need a template and a pod to manage your files on the storage. You can deploy the filebrowser to the cheapes cpu hardware.
+After that you need a template and a pod to manage your files on the storage. You can deploy the filebrowser to the cheapest cpu hardware. Please be aware that you connect the network storage to the pod. Sometimes you have to refresh the browser to see it in the list. On the "Deploy a Pod" screen, go to edit template and change the volume mount path to '/srv' to ensure that you manage the network storage instead of a local folder.
 ![](./readme_resources/02_filebrowser_template.jpg)
 ![](./readme_resources/03_filebrowser_pod.jpg)
 
@@ -44,3 +44,7 @@ After the creation of the pod it will start immediately to create images out of 
 Please check the logs of the gaussian splat pipeline pod, when there is something wrong it will try to execute task by task over and over again without any progress.
 
 There is one structure-from-motion step that is currently not working with the gpu and therefore its very slow. I hope i will find a way to fix this. Feel free to contribute :smile:
+
+# Known Issues
+- I do not recommend to use the viewer while training, because the chance is high that the training will fail.
+- GLOMAP is currently not working
