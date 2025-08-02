@@ -34,7 +34,7 @@ if [ -d /workspace/data/$DATASET/colmap ]; then
 else
     echo "colmap feature_extractor"
     mkdir -p /workspace/data/$DATASET/colmap
-    colmap feature_extractor --image_path /workspace/data/$DATASET/images --database_path /workspace/data/$DATASET/colmap/database.db --SiftExtraction.use_gpu 1
+    colmap feature_extractor --image_path /workspace/data/$DATASET/images --database_path /workspace/data/$DATASET/colmap/database.db
     measure_step "Feature extraction"
 
     echo "colmap $MAPPER_TYPE"
